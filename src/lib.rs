@@ -341,10 +341,20 @@ use core::fmt::Result;
 impl<'a> Write for PCD8544<'a> {
     fn write_str(&mut self, s: &str) -> Result {
         for char in s.chars() {
-            for b in PCD8544::char_to_bytes(char) {
-                self.write_data(*b);
+            match char {
+                '\r' => self.set_x_position(0),
+                '\n' => {
+                    for _ in 0..(WIDTH-self.x) {
+                        self.write_data(0x00);
+                    }
+                },
+                _ => {
+                    for b in PCD8544::char_to_bytes(char) {
+                        self.write_data(*b);
+                    }
+                    self.write_data(0x00);
+                }
             }
-            self.write_data(0x00);
         }
         Ok(())
     }
