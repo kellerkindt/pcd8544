@@ -344,6 +344,7 @@ impl<'a> Write for PCD8544<'a> {
             for b in PCD8544::char_to_bytes(char) {
                 self.write_data(*b);
             }
+            self.write_data(0x00);
         }
         Ok(())
     }
