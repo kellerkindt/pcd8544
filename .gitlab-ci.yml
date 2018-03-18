@@ -6,6 +6,6 @@ mirror:
 #        - git checkout -f ${CI_COMMIT_REF_NAME}
 #        - git pull origin ${CI_COMMIT_REF_NAME}
 #        - git push -q https://${GITHUB_USERNAME}:${GITHUB_TOKEN}@github.com/${GITHUB_REPO}.git
-        - git push --verbose https://${GITHUB_USERNAME}:${GITHUB_TOKEN}@github.com/${GITHUB_REPO}.git --tags
+        - git push --all -q https://${GITHUB_USERNAME}:${GITHUB_TOKEN}@github.com/${GITHUB_REPO}.git --tags
 
 
