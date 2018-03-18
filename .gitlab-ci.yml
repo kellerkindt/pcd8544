@@ -3,9 +3,9 @@ mirror:
     script:
         - git config --global push.default simple
         - git config --global push.followTags true
-        - git checkout -f ${CI_COMMIT_REF_NAME}
-        - git pull origin ${CI_COMMIT_REF_NAME}
-        - git push https://${GITHUB_USERNAME}:${GITHUB_TOKEN}@github.com/${GITHUB_REPO}.git
-        - git push https://${GITHUB_USERNAME}:${GITHUB_TOKEN}@github.com/${GITHUB_REPO}.git --tags
+#        - git checkout -f ${CI_COMMIT_REF_NAME}
+#        - git pull origin ${CI_COMMIT_REF_NAME}
+#        - git push -q https://${GITHUB_USERNAME}:${GITHUB_TOKEN}@github.com/${GITHUB_REPO}.git
+        - git push --verbose https://${GITHUB_USERNAME}:${GITHUB_TOKEN}@github.com/${GITHUB_REPO}.git --tags
 
 
