@@ -1,6 +1,6 @@
 [package]
 name = "pcd8544"
-version = "0.1.3"
+version = "0.1.4"
 authors = ["Michael Watzko <michael@watzko.de>"]
 repository = "https://github.com/kellerkindt/pcd8544.git"
 description = "Implementation to communicate and write to PCD8544 using embedded_hal as abstraction layer. WIP"
@@ -12,4 +12,4 @@ license = "MIT"
 
 [dependencies.embedded-hal]
 features = ["unproven"]
-version = "0.1.0"
+version = "0.2.1"
