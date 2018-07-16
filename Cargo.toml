@@ -1,10 +1,10 @@
 [package]
 name = "pcd8544"
-version = "0.1.4"
+version = "0.1.5"
 authors = ["Michael Watzko <michael@watzko.de>"]
 repository = "https://github.com/kellerkindt/pcd8544.git"
 description = "Implementation to communicate and write to PCD8544 using embedded_hal as abstraction layer. WIP"
-keywords = ["embedded", "display", "lcd", "pcd8544", "microcontroller"]
+keywords = ["embedded", "display", "lcd", "pcd8544", "embedded-hal-driver"]
 categories = ["embedded", "hardware-support", "no-std"]
 license = "MIT"
 
