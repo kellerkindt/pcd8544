@@ -52,6 +52,6 @@ fn main() -> ! {
 ```
 The code from the example is copy&pasted from a working project, but not tested in this specific combination.
 #### In action
-The picture below shows the display to display the temperature from the [onewire](https://github.com/kellerkindt/onewire/) [ds18b20](https://datasheets.maximintegrated.com/en/ds/DS18B20.pdf) sensor.
+The picture below shows the display to showing the temperature from the [onewire](https://github.com/kellerkindt/onewire/) [ds18b20](https://datasheets.maximintegrated.com/en/ds/DS18B20.pdf) sensor.
  
 ![](pcd8544.jpg) 
