@@ -25,12 +25,12 @@ fn main() -> ! {
     pcd_vcc  .set_high();
 
     let mut display = PCD8544::new(
-        &mut pcd_clk,
-        &mut pcd_din,
-        &mut pcd_dc,
-        &mut pcd_ce,
-        &mut pcd_rst,
-        &mut pcd_light,
+        pcd_clk,
+        pcd_din,
+        pcd_dc,
+        pcd_ce,
+        pcd_rst,
+        pcd_light,
     );
 
     display.reset();
