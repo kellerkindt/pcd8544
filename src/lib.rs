@@ -1,4 +1,6 @@
 #![no_std]
+use core::fmt::Result as FmtResult;
+use core::fmt::Write;
 use embedded_hal::digital::OutputPin;
 
 pub const WIDTH: u8 = 84;
@@ -255,9 +257,6 @@ where
     }
 }
 
-use core::fmt::Result;
-use core::fmt::Write;
-
 fn char_to_bytes(char: char) -> &'static [u8] {
     match char {
         ' ' => &[0x00, 0x00, 0x00, 0x00, 0x00],
@@ -370,7 +369,7 @@ where
     RST: OutputPin,
     LIGHT: OutputPin,
 {
-    fn write_str(&mut self, s: &str) -> Result {
+    fn write_str(&mut self, s: &str) -> FmtResult {
         for char in s.chars() {
             match char {
                 '\r' => self.set_x_position(0),
