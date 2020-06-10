@@ -1,9 +1,9 @@
 #![no_std]
 use embedded_hal::digital::OutputPin;
 
-const WIDTH: u8 = 84;
-const HEIGHT: u8 = 48;
-const ROWS: u8 = HEIGHT / 8;
+pub const WIDTH: u8 = 84;
+pub const HEIGHT: u8 = 48;
+pub const ROWS: u8 = HEIGHT / 8;
 
 #[repr(u8)]
 pub enum TemperatureCoefficient {
