@@ -1,3 +1,14 @@
+# pcd8544 - Display driver crate
+
+This crate implements the `Write` trait so that one can write text to the display.
+
+
+[![Build Status](https://github.com/kellerkindt/pcd8544/workflows/Rust/badge.svg)](https://github.com/kellerkindt/pcd8544/actions?query=workflow%3ARust)
+[![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](https://github.com/kellerkindt/pcd8544)
+[![Crates.io](https://img.shields.io/crates/v/pcd8544.svg)](https://crates.io/crates/pcd8544)
+[![Documentation](https://docs.rs/pcd8544/badge.svg)](https://docs.rs/pcd8544)
+
+
 # How to use
 Below is an example how to create a new PCD8544 instance, initialize and write "Hello World" onto it.
 
