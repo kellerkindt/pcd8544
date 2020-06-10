@@ -42,9 +42,9 @@ fn main() -> ! {
         pcd_ce,
         pcd_rst,
         pcd_light,
-    );
+    ).expect("Infallible cannot fail");
 
-    display.reset();
+    display.reset().expect("Infallible cannot fail");;
     writeln!(display, "Hello World");
     
     loop {}
