@@ -1,12 +1,9 @@
 #![no_std]
+use embedded_hal::digital::OutputPin;
 
-extern crate embedded_hal as hal;
-
-use hal::digital::OutputPin;
-
-const WIDTH  : u8 = 84;
-const HEIGHT : u8 = 48;
-const ROWS   : u8 = HEIGHT / 8;
+const WIDTH: u8 = 84;
+const HEIGHT: u8 = 48;
+const ROWS: u8 = HEIGHT / 8;
 
 #[repr(u8)]
 pub enum TemperatureCoefficient {
@@ -19,20 +16,20 @@ pub enum TemperatureCoefficient {
 #[repr(u8)]
 pub enum BiasMode {
     Bias1To100 = 0,
-    Bias1To80  = 1,
-    Bias1To65  = 2,
-    Bias1To48  = 3,
-    Bias1To40  = 4,
-    Bias1To24  = 5,
-    Bias1To18  = 6,
-    Bias1To10  = 7,
+    Bias1To80 = 1,
+    Bias1To65 = 2,
+    Bias1To48 = 3,
+    Bias1To40 = 4,
+    Bias1To24 = 5,
+    Bias1To18 = 6,
+    Bias1To10 = 7,
 }
 
 #[repr(u8)]
 pub enum DisplayMode {
-    DisplayBlank     = 0b000,
-    NormalMode       = 0b100,
-    AllSegmentsOn    = 0b001,
+    DisplayBlank = 0b000,
+    NormalMode = 0b100,
+    AllSegmentsOn = 0b001,
     InverseVideoMode = 0b101,
 }
 
@@ -55,7 +52,7 @@ where
     entry_mode: bool,
     extended_instruction_set: bool,
     x: u8,
-    y: u8
+    y: u8,
 }
 
 impl<CLK, DIN, DC, CE, RST, LIGHT> PCD8544<CLK, DIN, DC, CE, RST, LIGHT>
@@ -85,8 +82,8 @@ where
             ce,
             rst,
             light,
-            power_down_control:       false,
-            entry_mode:               false,
+            power_down_control: false,
+            entry_mode: false,
             extended_instruction_set: false,
             x: 0,
             y: 0,
@@ -106,9 +103,9 @@ where
         self.rst.set_high();
 
         // reset state variables
-        self.power_down_control         = false;
-        self.entry_mode                 = false;
-        self.extended_instruction_set   = false;
+        self.power_down_control = false;
+        self.entry_mode = false;
+        self.extended_instruction_set = false;
 
         // write init configuration
         self.enable_extended_commands(true);
@@ -197,7 +194,12 @@ where
         self.write_function_set(power, entry, extended);
     }
 
-    fn write_function_set(&mut self, power_down_control: bool, entry_mode: bool, extended_instruction_set: bool) {
+    fn write_function_set(
+        &mut self,
+        power_down_control: bool,
+        entry_mode: bool,
+        extended_instruction_set: bool,
+    ) {
         let mut val = 0x20;
         if power_down_control {
             val |= 0x04;
@@ -210,7 +212,6 @@ where
         }
         self.write_command(val);
     }
-
 
     pub fn write_command(&mut self, value: u8) {
         self.write_byte(false, value);
@@ -254,8 +255,8 @@ where
     }
 }
 
-use core::fmt::Write;
 use core::fmt::Result;
+use core::fmt::Write;
 
 fn char_to_bytes(char: char) -> &'static [u8] {
     match char {
@@ -374,10 +375,10 @@ where
             match char {
                 '\r' => self.set_x_position(0),
                 '\n' => {
-                    for _ in 0..(WIDTH-self.x) {
+                    for _ in 0..(WIDTH - self.x) {
                         self.write_data(0x00);
                     }
-                },
+                }
                 _ => {
                     for b in char_to_bytes(char) {
                         self.write_data(*b);

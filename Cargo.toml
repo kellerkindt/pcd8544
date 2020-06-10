@@ -8,9 +8,10 @@ keywords = ["embedded", "display", "lcd", "pcd8544", "embedded-hal-driver"]
 categories = ["embedded", "hardware-support", "no-std"]
 license = "MIT"
 readme = "README.md"
+edition = "2018"
 
 [lib]
 
 [dependencies.embedded-hal]
 features = ["unproven"]
-version = "0.2.1"
+version = "0.2.3"
