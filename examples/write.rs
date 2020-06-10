@@ -1,20 +1,12 @@
-extern crate embedded_hal;
-extern crate pcd8544;
-
-use embedded_hal::digital::{v1_compat::OldOutputPin, v2};
+use embedded_hal::digital::v2;
 use pcd8544::PCD8544;
+use std::convert::Infallible;
 use std::fmt::Write;
 
-pub struct DummyOutputPin {}
-
-impl DummyOutputPin {
-    pub fn new() -> Self {
-        DummyOutputPin {}
-    }
-}
+pub struct DummyOutputPin;
 
 impl v2::OutputPin for DummyOutputPin {
-    type Error = ();
+    type Error = Infallible;
     fn set_low(&mut self) -> Result<(), Self::Error> {
         Ok(())
     }
@@ -24,16 +16,17 @@ impl v2::OutputPin for DummyOutputPin {
     }
 }
 
-fn main() -> () {
-    let pcd_light: OldOutputPin<_> = DummyOutputPin::new().into();
-    let pcd_clk: OldOutputPin<_> = DummyOutputPin::new().into();
-    let pcd_din: OldOutputPin<_> = DummyOutputPin::new().into();
-    let pcd_dc: OldOutputPin<_> = DummyOutputPin::new().into();
-    let pcd_ce: OldOutputPin<_> = DummyOutputPin::new().into();
-    let pcd_rst: OldOutputPin<_> = DummyOutputPin::new().into();
+fn main() {
+    let pcd_light = DummyOutputPin;
+    let pcd_clk = DummyOutputPin;
+    let pcd_din = DummyOutputPin;
+    let pcd_dc = DummyOutputPin;
+    let pcd_ce = DummyOutputPin;
+    let pcd_rst = DummyOutputPin;
 
-    let mut display = PCD8544::new(pcd_clk, pcd_din, pcd_dc, pcd_ce, pcd_rst, pcd_light);
+    let mut display = PCD8544::new(pcd_clk, pcd_din, pcd_dc, pcd_ce, pcd_rst, pcd_light)
+        .expect("Infallible cannot fail");
 
-    display.reset();
+    display.reset().expect("Infallible cannot fail");
     writeln!(display, "Hello World").unwrap();
 }
