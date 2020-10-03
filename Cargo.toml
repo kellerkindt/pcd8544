@@ -12,6 +12,5 @@ edition = "2018"
 
 [lib]
 
-[dependencies.embedded-hal]
-features = ["unproven"]
-version = "0.2.3"
+[dependencies]
+embedded-hal = "0.2.5"
