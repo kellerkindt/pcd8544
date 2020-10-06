@@ -2,7 +2,11 @@
 use core::fmt::Error as FmtError;
 use core::fmt::Result as FmtResult;
 use core::fmt::Write;
+
 use embedded_hal::digital::v2::OutputPin;
+use embedded_hal::blocking::spi::Write as SpiWrite;
+
+pub mod spi;
 
 mod font;
 use crate::font::*;
@@ -39,17 +43,15 @@ pub enum DisplayMode {
     InverseVideoMode = 0b101,
 }
 
-pub struct PCD8544<CLK, DIN, DC, CE, RST, LIGHT>
+
+pub struct PCD8544<SPI, DC, CE, RST, LIGHT>
 where
-    CLK: OutputPin,
-    DIN: OutputPin,
     DC: OutputPin,
     CE: OutputPin,
     RST: OutputPin,
     LIGHT: OutputPin,
 {
-    clk: CLK,
-    din: DIN,
+    spi: SPI,
     dc: DC,
     ce: CE,
     rst: RST,
@@ -61,29 +63,29 @@ where
     y: u8,
 }
 
-impl<CLK, DIN, DC, CE, RST, LIGHT, ERR> PCD8544<CLK, DIN, DC, CE, RST, LIGHT>
+impl<SPI, DC, CE, RST, LIGHT, ERR> PCD8544<SPI, DC, CE, RST, LIGHT>
 where
-    CLK: OutputPin<Error = ERR>,
-    DIN: OutputPin<Error = ERR>,
+    SPI: SpiWrite<u8, Error = ERR>,
     DC: OutputPin<Error = ERR>,
     CE: OutputPin<Error = ERR>,
     RST: OutputPin<Error = ERR>,
     LIGHT: OutputPin<Error = ERR>,
 {
+    /// Constructs new PCD8544 with SPI and pin config.
+    /// Note that if you use hardware SPI port it must be configured
+    /// for SPI MODE0 and MSBFIRST.
+    /// Please use BitBangSpi if you don't want to sacrifice a hardware SPI port.
     pub fn new(
-        mut clk: CLK,
-        din: DIN,
+        spi: SPI,
         dc: DC,
         mut ce: CE,
         mut rst: RST,
         light: LIGHT,
-    ) -> Result<PCD8544<CLK, DIN, DC, CE, RST, LIGHT>, ERR> {
-        clk.set_low()?;
+    ) -> Result<PCD8544<SPI, DC, CE, RST, LIGHT>, ERR> {
         rst.set_low()?;
         ce.set_high()?;
         Ok(PCD8544 {
-            clk,
-            din,
+            spi,
             dc,
             ce,
             rst,
@@ -223,51 +225,35 @@ where
     }
 
     pub fn write_command(&mut self, value: u8) -> Result<(), ERR> {
-        self.write_byte(false, value)
+        self.dc.set_low()?;
+        self.write_byte(value)
     }
 
     pub fn write_data(&mut self, value: u8) -> Result<(), ERR> {
-        self.write_byte(true, value)
+        self.dc.set_high()?;
+        self.increase_position();
+        self.write_byte(value)
     }
 
-    fn write_byte(&mut self, data: bool, value: u8) -> Result<(), ERR> {
-        let mut value = value;
-        if data {
-            self.dc.set_high()?;
-            self.increase_position();
-        } else {
-            self.dc.set_low()?;
-        }
+    #[inline]
+    fn write_byte(&mut self, value: u8) -> Result<(), ERR> {
         self.ce.set_low()?;
-        for _ in 0..8 {
-            self.write_bit((value & 0x80) == 0x80)?;
-            value <<= 1;
-        }
+        self.spi.write(&[value])?;
         self.ce.set_high()
     }
 
+    #[inline]
     fn increase_position(&mut self) {
         self.x = (self.x + 1) % WIDTH;
         if self.x == 0 {
             self.y = (self.y + 1) & ROWS;
         }
     }
-
-    fn write_bit(&mut self, high: bool) -> Result<(), ERR> {
-        if high {
-            self.din.set_high()?;
-        } else {
-            self.din.set_low()?;
-        }
-        self.clk.set_high()?;
-        self.clk.set_low()
-    }
 }
 
-impl<CLK, DIN, DC, CE, RST, LIGHT, ERR> Write for PCD8544<CLK, DIN, DC, CE, RST, LIGHT>
+impl<SPI, DC, CE, RST, LIGHT, ERR> Write for PCD8544<SPI, DC, CE, RST, LIGHT>
 where
-    CLK: OutputPin<Error = ERR>,
-    DIN: OutputPin<Error = ERR>,
+    SPI: SpiWrite<u8, Error = ERR>,
     DC: OutputPin<Error = ERR>,
     CE: OutputPin<Error = ERR>,
     RST: OutputPin<Error = ERR>,
