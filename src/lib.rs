@@ -8,6 +8,9 @@ use embedded_hal::blocking::spi::Write as SpiWrite;
 
 pub mod spi;
 
+pub mod error;
+use crate::error::*;
+
 mod font;
 use crate::font::*;
 
@@ -63,13 +66,13 @@ where
     y: u8,
 }
 
-impl<SPI, DC, CE, RST, LIGHT, ERR> PCD8544<SPI, DC, CE, RST, LIGHT>
+impl<SPI, DC, CE, RST, LIGHT, PE> PCD8544<SPI, DC, CE, RST, LIGHT>
 where
-    SPI: SpiWrite<u8, Error = ERR>,
-    DC: OutputPin<Error = ERR>,
-    CE: OutputPin<Error = ERR>,
-    RST: OutputPin<Error = ERR>,
-    LIGHT: OutputPin<Error = ERR>,
+    SPI: SpiWrite<u8>,
+    DC: OutputPin<Error = PE>,
+    CE: OutputPin<Error = PE>,
+    RST: OutputPin<Error = PE>,
+    LIGHT: OutputPin<Error = PE>,
 {
     /// Constructs new PCD8544 with SPI and pin config.
     /// Note that if you use hardware SPI port it must be configured
@@ -81,9 +84,9 @@ where
         mut ce: CE,
         mut rst: RST,
         light: LIGHT,
-    ) -> Result<PCD8544<SPI, DC, CE, RST, LIGHT>, ERR> {
-        rst.set_low()?;
-        ce.set_high()?;
+    ) -> Result<PCD8544<SPI, DC, CE, RST, LIGHT>, PCDError> {
+        PCDError::pin(rst.set_low())?;
+        PCDError::pin(ce.set_high())?;
         Ok(PCD8544 {
             spi,
             dc,
@@ -98,17 +101,17 @@ where
         })
     }
 
-    pub fn reset(&mut self) -> Result<(), ERR> {
-        self.rst.set_low()?;
+    pub fn reset(&mut self) -> Result<(), PCDError> {
+        PCDError::pin(self.rst.set_low())?;
         self.x = 0;
         self.y = 0;
         self.init()
     }
 
-    pub fn init(&mut self) -> Result<(), ERR> {
+    pub fn init(&mut self) -> Result<(), PCDError> {
         // reset the display
-        self.rst.set_low()?;
-        self.rst.set_high()?;
+        PCDError::pin(self.rst.set_low())?;
+        PCDError::pin(self.rst.set_high())?;
 
         // reset state variables
         self.power_down_control = false;
@@ -127,7 +130,7 @@ where
         self.clear()
     }
 
-    pub fn clear(&mut self) -> Result<(), ERR> {
+    pub fn clear(&mut self) -> Result<(), PCDError> {
         for _ in 0..(WIDTH as u16 * ROWS as u16) {
             self.write_data(0x00)?;
         }
@@ -135,12 +138,12 @@ where
         self.set_y_position(0)
     }
 
-    pub fn set_power_down(&mut self, power_down: bool) -> Result<(), ERR> {
+    pub fn set_power_down(&mut self, power_down: bool) -> Result<(), PCDError> {
         self.power_down_control = power_down;
         self.write_current_function_set()
     }
 
-    pub fn set_entry_mode(&mut self, entry_mode: bool) -> Result<(), ERR> {
+    pub fn set_entry_mode(&mut self, entry_mode: bool) -> Result<(), PCDError> {
         self.entry_mode = entry_mode;
         self.write_current_function_set()
     }
@@ -153,52 +156,52 @@ where
         self.y
     }
 
-    pub fn set_x_position(&mut self, x: u8) -> Result<(), ERR> {
+    pub fn set_x_position(&mut self, x: u8) -> Result<(), PCDError> {
         let x = x % WIDTH;
         self.x = x;
         self.write_command(0x80 | x)
     }
 
-    pub fn set_y_position(&mut self, y: u8) -> Result<(), ERR> {
+    pub fn set_y_position(&mut self, y: u8) -> Result<(), PCDError> {
         let y = y % ROWS;
         self.y = y;
         self.write_command(0x40 | y)
     }
 
-    pub fn set_light(&mut self, enabled: bool) -> Result<(), ERR> {
+    pub fn set_light(&mut self, enabled: bool) -> Result<(), PCDError> {
         if enabled {
-            self.light.set_low()
+            PCDError::pin(self.light.set_low())
         } else {
-            self.light.set_high()
+            PCDError::pin(self.light.set_high())
         }
     }
 
-    pub fn set_display_mode(&mut self, mode: DisplayMode) -> Result<(), ERR> {
+    pub fn set_display_mode(&mut self, mode: DisplayMode) -> Result<(), PCDError> {
         self.write_command(0x08 | mode as u8)
     }
 
-    pub fn set_bias_mode(&mut self, bias: BiasMode) -> Result<(), ERR> {
+    pub fn set_bias_mode(&mut self, bias: BiasMode) -> Result<(), PCDError> {
         self.write_command(0x10 | bias as u8)
     }
 
     pub fn set_temperature_coefficient(
         &mut self,
         coefficient: TemperatureCoefficient,
-    ) -> Result<(), ERR> {
+    ) -> Result<(), PCDError> {
         self.write_command(0x04 | coefficient as u8)
     }
 
     /// contrast in range of 0..128
-    pub fn set_contrast(&mut self, contrast: u8) -> Result<(), ERR> {
+    pub fn set_contrast(&mut self, contrast: u8) -> Result<(), PCDError> {
         self.write_command(0x80 | contrast)
     }
 
-    pub fn enable_extended_commands(&mut self, enable: bool) -> Result<(), ERR> {
+    pub fn enable_extended_commands(&mut self, enable: bool) -> Result<(), PCDError> {
         self.extended_instruction_set = enable;
         self.write_current_function_set()
     }
 
-    fn write_current_function_set(&mut self) -> Result<(), ERR> {
+    fn write_current_function_set(&mut self) -> Result<(), PCDError> {
         let power = self.power_down_control;
         let entry = self.entry_mode;
         let extended = self.extended_instruction_set;
@@ -210,7 +213,7 @@ where
         power_down_control: bool,
         entry_mode: bool,
         extended_instruction_set: bool,
-    ) -> Result<(), ERR> {
+    ) -> Result<(), PCDError> {
         let mut val = 0x20;
         if power_down_control {
             val |= 0x04;
@@ -224,22 +227,22 @@ where
         self.write_command(val)
     }
 
-    pub fn write_command(&mut self, value: u8) -> Result<(), ERR> {
-        self.dc.set_low()?;
+    pub fn write_command(&mut self, value: u8) -> Result<(), PCDError> {
+        PCDError::pin(self.dc.set_low())?;
         self.write_byte(value)
     }
 
-    pub fn write_data(&mut self, value: u8) -> Result<(), ERR> {
-        self.dc.set_high()?;
+    pub fn write_data(&mut self, value: u8) -> Result<(), PCDError> {
+        PCDError::pin(self.dc.set_high())?;
         self.increase_position();
         self.write_byte(value)
     }
 
     #[inline]
-    fn write_byte(&mut self, value: u8) -> Result<(), ERR> {
-        self.ce.set_low()?;
-        self.spi.write(&[value])?;
-        self.ce.set_high()
+    fn write_byte(&mut self, value: u8) -> Result<(), PCDError> {
+        PCDError::pin(self.ce.set_low())?;
+        PCDError::spi(self.spi.write(&[value]))?;
+        PCDError::pin(self.ce.set_high())
     }
 
     #[inline]
@@ -253,7 +256,7 @@ where
 
 impl<SPI, DC, CE, RST, LIGHT, ERR> Write for PCD8544<SPI, DC, CE, RST, LIGHT>
 where
-    SPI: SpiWrite<u8, Error = ERR>,
+    SPI: SpiWrite<u8>,
     DC: OutputPin<Error = ERR>,
     CE: OutputPin<Error = ERR>,
     RST: OutputPin<Error = ERR>,
