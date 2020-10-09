@@ -2,10 +2,9 @@
 
 use core::marker::PhantomData;
 
-use embedded_hal::digital::v2::OutputPin;
-use embedded_hal::blocking::spi::Write as SpiWrite;
 use embedded_hal::blocking::delay::DelayUs;
-
+use embedded_hal::blocking::spi::Write as SpiWrite;
+use embedded_hal::digital::v2::OutputPin;
 
 /// "Bit bang" SPI implementation.
 /// Use when you don't want to sacrifice a SPI port
@@ -13,7 +12,7 @@ pub struct BitBangSpi<ERR, CLK, DIN, DELAY> {
     clk: CLK,
     din: DIN,
     delay: DELAY,
-    _phantom: PhantomData<ERR>
+    _phantom: PhantomData<ERR>,
 }
 
 /// Used to run without delay on a slow enough clock speed (below 8Mhz)
@@ -32,14 +31,14 @@ where
     /// Constructs a "bit bang" SPI implementation from "data in" and "clock" pins.
     /// If your clock frequency is higher than 8Mhz please consider `new_with_delay`,
     /// otherwise device won't work.
-    pub fn new(
-        mut clk: CLK,
-        din: DIN,
-    ) -> Result<BitBangSpi<ERR, CLK, DIN, NoDelay>, ERR> {
+    pub fn new(mut clk: CLK, din: DIN) -> Result<BitBangSpi<ERR, CLK, DIN, NoDelay>, ERR> {
         clk.set_low()?;
-        Ok(
-            BitBangSpi { clk, din, delay: NoDelay{}, _phantom: PhantomData::default() }
-        )
+        Ok(BitBangSpi {
+            clk,
+            din,
+            delay: NoDelay {},
+            _phantom: PhantomData::default(),
+        })
     }
 }
 
@@ -66,14 +65,16 @@ where
     pub fn new_with_delay(
         mut clk: CLK,
         din: DIN,
-        delay: DELAY
+        delay: DELAY,
     ) -> Result<BitBangSpi<ERR, CLK, DIN, DELAY>, ERR> {
         clk.set_low()?;
-        Ok(
-            BitBangSpi { clk, din, delay, _phantom: PhantomData::default() }
-        )
+        Ok(BitBangSpi {
+            clk,
+            din,
+            delay,
+            _phantom: PhantomData::default(),
+        })
     }
-
 
     #[inline]
     fn write_bit(&mut self, high: bool) -> Result<(), ERR> {

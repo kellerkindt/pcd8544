@@ -1,5 +1,5 @@
 use embedded_hal::digital::v2;
-use pcd8544::{ PCD8544, spi::BitBangSpi };
+use pcd8544::{spi::BitBangSpi, PCD8544};
 use std::convert::Infallible;
 use std::fmt::Write;
 
@@ -25,8 +25,8 @@ fn main() {
     let pcd_rst = DummyOutputPin;
 
     let spi = BitBangSpi::new(pcd_clk, pcd_din).expect("Infallible cannot fail");
-    let mut display = PCD8544::new(spi, pcd_dc, pcd_ce, pcd_rst, pcd_light)
-        .expect("Infallible cannot fail");
+    let mut display =
+        PCD8544::new(spi, pcd_dc, pcd_ce, pcd_rst, pcd_light).expect("Infallible cannot fail");
 
     display.reset().expect("Infallible cannot fail");
     writeln!(display, "Hello World").unwrap();

@@ -8,12 +8,12 @@ pub enum PCDError {
 
 impl PCDError {
     #[inline]
-    pub fn pin<A,E>(r: Result<A,E>) -> Result<A,PCDError> {
+    pub fn pin<A, E>(r: Result<A, E>) -> Result<A, PCDError> {
         r.map_err(|_| PCDError::OutputPinError)
     }
 
     #[inline]
-    pub fn spi<A,E>(r: Result<A,E>) -> Result<A,PCDError> {
+    pub fn spi<A, E>(r: Result<A, E>) -> Result<A, PCDError> {
         r.map_err(|_| PCDError::SpiError)
     }
 }

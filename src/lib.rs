@@ -3,8 +3,8 @@ use core::fmt::Error as FmtError;
 use core::fmt::Result as FmtResult;
 use core::fmt::Write;
 
-use embedded_hal::digital::v2::OutputPin;
 use embedded_hal::blocking::spi::Write as SpiWrite;
+use embedded_hal::digital::v2::OutputPin;
 
 pub mod spi;
 
@@ -45,7 +45,6 @@ pub enum DisplayMode {
     AllSegmentsOn = 0b001,
     InverseVideoMode = 0b101,
 }
-
 
 pub struct PCD8544<SPI, DC, CE, RST, LIGHT>
 where
