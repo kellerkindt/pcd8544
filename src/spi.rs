@@ -50,18 +50,6 @@ where
 {
     /// Constructs a "bit bang" SPI implementation from "data in" and "clock" pins
     /// with a clock delay. Please use this variant for clock speeds higher than 8Mhz.
-    ///
-    /// ```rust
-    /// let cp = cortex_m::peripheral::Peripherals::take().unwrap();
-    /// let dwt = cp.DWT.constrain(cp.DCB, clocks);
-    /// let delay = dwt.delay();
-    ///
-    /// let pcd_spi = BitBangSpi::new_with_delay(
-    ///     pcd_clk,
-    ///     pcd_din,
-    ///     delay.clone(),
-    /// ).unwrap();
-    /// ```
     pub fn new_with_delay(
         mut clk: CLK,
         din: DIN,

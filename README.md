@@ -35,9 +35,10 @@ fn main() -> ! {
     pcd_light.set_high();
     pcd_vcc  .set_high();
 
+    let pcd_spi = spi::BitBangSpi::new_with_delay(pcd_clk, pcd_din).unwrap();
+
     let mut display = PCD8544::new(
-        pcd_clk,
-        pcd_din,
+        pcd_spi,
         pcd_dc,
         pcd_ce,
         pcd_rst,
@@ -54,4 +55,4 @@ The code from the example is copy&pasted from a working project, but not tested 
 #### In action
 The picture below shows the display to showing the temperature from the [onewire](https://github.com/kellerkindt/onewire/) [ds18b20](https://datasheets.maximintegrated.com/en/ds/DS18B20.pdf) sensor.
  
-![](pcd8544.jpg) 
+![](pcd8544.jpg)
