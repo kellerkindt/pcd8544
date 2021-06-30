@@ -13,4 +13,5 @@ edition = "2018"
 [lib]
 
 [dependencies]
+embedded-graphics-core = "0.3.2"
 embedded-hal = "0.2.5"
