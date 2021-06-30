@@ -227,8 +227,7 @@ where
         self.write_byte(true, value)
     }
 
-    fn write_byte(&mut self, data: bool, value: u8) -> Result<(), ERR> {
-        let mut value = value;
+    fn write_byte(&mut self, data: bool, mut value: u8) -> Result<(), ERR> {
         if data {
             self.dc.set_high()?;
             self.increase_position();
