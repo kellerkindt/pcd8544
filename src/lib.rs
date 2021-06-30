@@ -1,10 +1,16 @@
 #![no_std]
+
+mod backend;
+mod font;
+
 use core::fmt::Error as FmtError;
 use core::fmt::Result as FmtResult;
 use core::fmt::Write;
+
+use embedded_hal::blocking;
 use embedded_hal::digital::v2::OutputPin;
 
-mod font;
+use crate::backend::*;
 use crate::font::*;
 
 pub const WIDTH: u8 = 84;
@@ -39,19 +45,13 @@ pub enum DisplayMode {
     InverseVideoMode = 0b101,
 }
 
-pub struct PCD8544<CLK, DIN, DC, CE, RST, LIGHT>
+pub struct PCD8544<Backend, LIGHT, RST>
 where
-    CLK: OutputPin,
-    DIN: OutputPin,
-    DC: OutputPin,
-    CE: OutputPin,
-    RST: OutputPin,
+    Backend: PCD8544Backend,
     LIGHT: OutputPin,
+    RST: OutputPin,
 {
-    clk: CLK,
-    din: DIN,
-    dc: DC,
-    ce: CE,
+    backend: Backend,
     rst: RST,
     light: LIGHT,
     power_down_control: bool,
@@ -61,31 +61,31 @@ where
     y: u8,
 }
 
-impl<CLK, DIN, DC, CE, RST, LIGHT, ERR> PCD8544<CLK, DIN, DC, CE, RST, LIGHT>
+impl<CLK, DIN, DC, CE, LIGHT, RST, ERR> PCD8544<PCD8544GpioBackend<CLK, DIN, DC, CE>, LIGHT, RST>
 where
     CLK: OutputPin<Error = ERR>,
     DIN: OutputPin<Error = ERR>,
     DC: OutputPin<Error = ERR>,
     CE: OutputPin<Error = ERR>,
-    RST: OutputPin<Error = ERR>,
     LIGHT: OutputPin<Error = ERR>,
+    RST: OutputPin<Error = ERR>,
 {
-    pub fn new(
-        mut clk: CLK,
+    pub fn new(clk: CLK, din: DIN, dc: DC, ce: CE, light: LIGHT, rst: RST) -> Result<Self, ERR> {
+        Self::new_from_gpio(clk, din, dc, ce, light, rst)
+    }
+
+    pub fn new_from_gpio(
+        clk: CLK,
         din: DIN,
         dc: DC,
-        mut ce: CE,
-        mut rst: RST,
+        ce: CE,
         light: LIGHT,
-    ) -> Result<PCD8544<CLK, DIN, DC, CE, RST, LIGHT>, ERR> {
-        clk.set_low()?;
+        mut rst: RST,
+    ) -> Result<Self, ERR> {
+        let backend = PCD8544GpioBackend::new(clk, din, dc, ce)?;
         rst.set_low()?;
-        ce.set_high()?;
         Ok(PCD8544 {
-            clk,
-            din,
-            dc,
-            ce,
+            backend,
             rst,
             light,
             power_down_control: false,
@@ -95,15 +95,47 @@ where
             y: 0,
         })
     }
+}
 
-    pub fn reset(&mut self) -> Result<(), ERR> {
+impl<SPI, DC, CE, LIGHT, RST, ERR, SPIERR> PCD8544<PCD8544SpiBackend<SPI, DC, CE>, LIGHT, RST>
+where
+    SPI: blocking::spi::Write<u8, Error = SPIERR>,
+
+    DC: OutputPin<Error = ERR>,
+    CE: OutputPin<Error = ERR>,
+    LIGHT: OutputPin<Error = ERR>,
+    RST: OutputPin<Error = ERR>,
+{
+    pub fn new_from_spi(spi: SPI, dc: DC, ce: CE, light: LIGHT, mut rst: RST) -> Result<Self, ERR> {
+        let backend = PCD8544SpiBackend::new(spi, dc, ce)?;
+        rst.set_low()?;
+        Ok(PCD8544 {
+            backend,
+            rst,
+            light,
+            power_down_control: false,
+            entry_mode: false,
+            extended_instruction_set: false,
+            x: 0,
+            y: 0,
+        })
+    }
+}
+
+impl<Backend, LIGHT, RST> PCD8544<Backend, LIGHT, RST>
+where
+    Backend: PCD8544Backend,
+    LIGHT: OutputPin<Error = Backend::Error>,
+    RST: OutputPin<Error = Backend::Error>,
+{
+    pub fn reset(&mut self) -> Result<(), Backend::Error> {
         self.rst.set_low()?;
         self.x = 0;
         self.y = 0;
         self.init()
     }
 
-    pub fn init(&mut self) -> Result<(), ERR> {
+    pub fn init(&mut self) -> Result<(), Backend::Error> {
         // reset the display
         self.rst.set_low()?;
         self.rst.set_high()?;
@@ -125,7 +157,7 @@ where
         self.clear()
     }
 
-    pub fn clear(&mut self) -> Result<(), ERR> {
+    pub fn clear(&mut self) -> Result<(), Backend::Error> {
         for _ in 0..(WIDTH as u16 * ROWS as u16) {
             self.write_data(0x00)?;
         }
@@ -133,12 +165,12 @@ where
         self.set_y_position(0)
     }
 
-    pub fn set_power_down(&mut self, power_down: bool) -> Result<(), ERR> {
+    pub fn set_power_down(&mut self, power_down: bool) -> Result<(), Backend::Error> {
         self.power_down_control = power_down;
         self.write_current_function_set()
     }
 
-    pub fn set_entry_mode(&mut self, entry_mode: bool) -> Result<(), ERR> {
+    pub fn set_entry_mode(&mut self, entry_mode: bool) -> Result<(), Backend::Error> {
         self.entry_mode = entry_mode;
         self.write_current_function_set()
     }
@@ -151,19 +183,19 @@ where
         self.y
     }
 
-    pub fn set_x_position(&mut self, x: u8) -> Result<(), ERR> {
+    pub fn set_x_position(&mut self, x: u8) -> Result<(), Backend::Error> {
         let x = x % WIDTH;
         self.x = x;
         self.write_command(0x80 | x)
     }
 
-    pub fn set_y_position(&mut self, y: u8) -> Result<(), ERR> {
+    pub fn set_y_position(&mut self, y: u8) -> Result<(), Backend::Error> {
         let y = y % ROWS;
         self.y = y;
         self.write_command(0x40 | y)
     }
 
-    pub fn set_light(&mut self, enabled: bool) -> Result<(), ERR> {
+    pub fn set_light(&mut self, enabled: bool) -> Result<(), Backend::Error> {
         if enabled {
             self.light.set_low()
         } else {
@@ -171,32 +203,32 @@ where
         }
     }
 
-    pub fn set_display_mode(&mut self, mode: DisplayMode) -> Result<(), ERR> {
+    pub fn set_display_mode(&mut self, mode: DisplayMode) -> Result<(), Backend::Error> {
         self.write_command(0x08 | mode as u8)
     }
 
-    pub fn set_bias_mode(&mut self, bias: BiasMode) -> Result<(), ERR> {
+    pub fn set_bias_mode(&mut self, bias: BiasMode) -> Result<(), Backend::Error> {
         self.write_command(0x10 | bias as u8)
     }
 
     pub fn set_temperature_coefficient(
         &mut self,
         coefficient: TemperatureCoefficient,
-    ) -> Result<(), ERR> {
+    ) -> Result<(), Backend::Error> {
         self.write_command(0x04 | coefficient as u8)
     }
 
     /// contrast in range of 0..128
-    pub fn set_contrast(&mut self, contrast: u8) -> Result<(), ERR> {
+    pub fn set_contrast(&mut self, contrast: u8) -> Result<(), Backend::Error> {
         self.write_command(0x80 | contrast)
     }
 
-    pub fn enable_extended_commands(&mut self, enable: bool) -> Result<(), ERR> {
+    pub fn enable_extended_commands(&mut self, enable: bool) -> Result<(), Backend::Error> {
         self.extended_instruction_set = enable;
         self.write_current_function_set()
     }
 
-    fn write_current_function_set(&mut self) -> Result<(), ERR> {
+    fn write_current_function_set(&mut self) -> Result<(), Backend::Error> {
         let power = self.power_down_control;
         let entry = self.entry_mode;
         let extended = self.extended_instruction_set;
@@ -208,7 +240,7 @@ where
         power_down_control: bool,
         entry_mode: bool,
         extended_instruction_set: bool,
-    ) -> Result<(), ERR> {
+    ) -> Result<(), Backend::Error> {
         let mut val = 0x20;
         if power_down_control {
             val |= 0x04;
@@ -222,27 +254,14 @@ where
         self.write_command(val)
     }
 
-    pub fn write_command(&mut self, value: u8) -> Result<(), ERR> {
-        self.write_byte(false, value)
+    fn write_command(&mut self, value: u8) -> Result<(), Backend::Error> {
+        self.backend.write_byte(false, value)
     }
 
-    pub fn write_data(&mut self, value: u8) -> Result<(), ERR> {
-        self.write_byte(true, value)
-    }
+    fn write_data(&mut self, value: u8) -> Result<(), Backend::Error> {
+        self.increase_position();
 
-    fn write_byte(&mut self, data: bool, mut value: u8) -> Result<(), ERR> {
-        if data {
-            self.dc.set_high()?;
-            self.increase_position();
-        } else {
-            self.dc.set_low()?;
-        }
-        self.ce.set_low()?;
-        for _ in 0..8 {
-            self.write_bit((value & 0x80) == 0x80)?;
-            value <<= 1;
-        }
-        self.ce.set_high()
+        self.backend.write_byte(true, value)
     }
 
     fn increase_position(&mut self) {
@@ -251,26 +270,13 @@ where
             self.y = (self.y + 1) & ROWS;
         }
     }
-
-    fn write_bit(&mut self, high: bool) -> Result<(), ERR> {
-        if high {
-            self.din.set_high()?;
-        } else {
-            self.din.set_low()?;
-        }
-        self.clk.set_high()?;
-        self.clk.set_low()
-    }
 }
 
-impl<CLK, DIN, DC, CE, RST, LIGHT, ERR> Write for PCD8544<CLK, DIN, DC, CE, RST, LIGHT>
+impl<Backend, LIGHT, RST> Write for PCD8544<Backend, LIGHT, RST>
 where
-    CLK: OutputPin<Error = ERR>,
-    DIN: OutputPin<Error = ERR>,
-    DC: OutputPin<Error = ERR>,
-    CE: OutputPin<Error = ERR>,
-    RST: OutputPin<Error = ERR>,
-    LIGHT: OutputPin<Error = ERR>,
+    Backend: PCD8544Backend,
+    LIGHT: OutputPin<Error = Backend::Error>,
+    RST: OutputPin<Error = Backend::Error>,
 {
     fn write_str(&mut self, s: &str) -> FmtResult {
         for char in s.chars() {
