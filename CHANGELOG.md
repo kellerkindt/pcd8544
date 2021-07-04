@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 ### Breaking changes
 - Use SPI instead of bit banging for comunication. Allows operation independent of CPU speed. ([Issue 4 in upstream](https://github.com/kellerkindt/pcd8544/issues/4)) [614984](https://github.com/kolen/pcd8544/commit/6149845869383ef5f6be38bc461e21d7a01b0f4a)
+- Add embedded_graphics DrawTarget support
 
 ## [0.2.0] - 2020-06-10
 ### Breaking changes
