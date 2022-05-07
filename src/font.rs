@@ -1,7 +1,7 @@
-//! Bitmap font
+//! Bitmap font to use while not using embedded_graphics
 
-pub(crate) fn char_to_bytes(char: char) -> &'static [u8] {
-    match char {
+pub(crate) fn char_to_bytes(c: char) -> &'static [u8] {
+    match c {
         ' ' => &[0x00, 0x00, 0x00, 0x00, 0x00],
         '!' => &[0x00, 0x00, 0x5f, 0x00, 0x00],
         '"' => &[0x00, 0x07, 0x00, 0x07, 0x00],
@@ -102,3 +102,4 @@ pub(crate) fn char_to_bytes(char: char) -> &'static [u8] {
         _ => &[0xFF, 0xFF, 0xFF, 0xFF, 0xFF],
     }
 }
+

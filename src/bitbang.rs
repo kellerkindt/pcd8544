@@ -1,4 +1,14 @@
-//! "Bit bang" SPI implementation
+//! "Bit bang" half duplex SPI implementation
+//! perfect for PCD8544 which doesn't have/need full duplex. 
+//! This code is much more efficient for the PCD8544 than the bitbang-hal crate
+//!
+//! Use BitBangSpi.new() for slow boards who do not need a delay 
+//! and BitBangSpi.new_with_delay() for fast(er) boards.
+//!
+//! Created by andreyk0
+//! https://github.com/andreyk0/pcd8544/blob/master/src/spi.rs
+//!
+//! Only added some documentation to this
 
 use core::marker::PhantomData;
 
@@ -8,6 +18,9 @@ use embedded_hal::digital::v2::OutputPin;
 
 /// "Bit bang" SPI implementation.
 /// Use when you don't want to sacrifice a SPI port
+/// or you want your PCD8544 to line up perfectly with your board
+/// and SPI doesn't line up that nice
+/// see example picture in README, with a Blue Pill.
 pub struct BitBangSpi<ERR, CLK, DIN, DELAY> {
     clk: CLK,
     din: DIN,
