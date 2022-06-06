@@ -21,6 +21,7 @@ bitbang-hal = "0.3.2"
 
 [dependencies.pcd8544]
 path = "../.."
+features = ["textmode"]
 
 [dependencies.stm32f1xx-hal]
 version = "0.9.0"

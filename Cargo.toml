@@ -12,6 +12,20 @@ edition = "2018"
 
 [lib]
 
+[features]
+default = []
+textmode = []
+graphics = ["embedded-graphics-core"]
+
 [dependencies.embedded-hal]
 features = ["unproven"]
 version = "0.2.4"
+
+[dependencies.embedded-graphics-core]
+optional = true
+version = "0.3.3"
+
+[dev-dependencies.pcd8544]
+path = "."
+version = "0.2.0"
+features = ["textmode"]

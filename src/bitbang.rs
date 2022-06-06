@@ -6,9 +6,7 @@
 //! and BitBangSpi.new_with_delay() for fast(er) boards.
 //!
 //! Created by andreyk0
-//! https://github.com/andreyk0/pcd8544/blob/master/src/spi.rs
-//!
-//! Only added some documentation to this
+//! <https://github.com/andreyk0/pcd8544/blob/master/src/spi.rs>
 
 use core::marker::PhantomData;
 
@@ -17,10 +15,12 @@ use embedded_hal::blocking::spi::Write as SpiWrite;
 use embedded_hal::digital::v2::OutputPin;
 
 /// "Bit bang" SPI implementation.
+///
 /// Use when you don't want to sacrifice a SPI port
 /// or you want your PCD8544 to line up perfectly with your board
 /// and SPI doesn't line up that nice
 /// see example picture in README, with a Blue Pill.
+#[derive(Debug)]
 pub struct BitBangSpi<ERR, CLK, DIN, DELAY> {
     clk: CLK,
     din: DIN,
@@ -29,6 +29,7 @@ pub struct BitBangSpi<ERR, CLK, DIN, DELAY> {
 }
 
 /// Used to run without delay on a slow enough clock speed (below 8Mhz)
+#[derive(Debug, Clone, Copy)]
 pub struct NoDelay {}
 
 impl DelayUs<u8> for NoDelay {
@@ -42,8 +43,9 @@ where
     DIN: OutputPin<Error = ERR>,
 {
     /// Constructs a "bit bang" SPI implementation from "data in" and "clock" pins.
+    ///
     /// If your clock frequency is higher than 8Mhz please consider `new_with_delay`,
-    /// otherwise device won't work.
+    /// otherwise the device won't work (processor will be too fast and bitbang above 4 MBit).
     pub fn new(mut clk: CLK, din: DIN) -> Result<BitBangSpi<ERR, CLK, DIN, NoDelay>, ERR> {
         clk.set_low()?;
         Ok(BitBangSpi {
@@ -61,8 +63,9 @@ where
     DIN: OutputPin<Error = ERR>,
     DELAY: DelayUs<u8>,
 {
-    /// Constructs a "bit bang" SPI implementation from "data in" and "clock" pins
-    /// with a clock delay. Please use this variant for clock speeds higher than 8Mhz.
+    /// constructs a clock delayed "bit bang" SPI implementation from "data in" and "clock" pins
+    ///
+    /// Please use this variant for clock speeds higher than 8Mhz. It needs a Delay.
     pub fn new_with_delay(
         mut clk: CLK,
         din: DIN,
